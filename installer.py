@@ -1,5 +1,5 @@
 #import python dependencies
-import os, shutil, sys, socket
+import os, shutil, sys, socket, platform
 
 #import third-party dependencies
 import requests
@@ -23,15 +23,18 @@ font = None
 
 #network
 def dl_loc (name):
-	loc = ''
-	if 'win' in sys.platform: dl_loc = os.environ['TEMP'].replace('\\', '/')
-	else: loc = '.'
-	return loc + '/' + name
+	get = os.getcwd().replace('\\', '/')
+	if '/' not in get: get = '.'
+	return get + '/' + name
 
 def download (From, to):
-	req = requests.get(From)
-	shutil.copyfileobj(req.raw, dl_loc(to))
-
+	dfile = open(dl_loc(to), 'wb')
+	req = requests.get(From, stream=True)
+	raw = req.raw
+	while True:
+		get = raw.read()
+		if get: dfile.write(get)
+		else: break
 
 #gui
 widgets = []
@@ -238,7 +241,7 @@ def check_deps_run (values):
 	elif values['mode'] == 'python':
 		
 		#has python
-		if glos['python']:
+		if glos['python'] and os.path.exists('C:/Python27'):
 			values['bar'].setValue(1)
 			glos['python_check'] = True
 			values['mode'] = 'numpy'
@@ -271,7 +274,9 @@ def check_deps_run (values):
 
 
 #
-def _install_dep (name): os.system('pip install ' + name)
+def _install_dep (name):
+	if sys.platform.startswith('win'): os.system('C:\\Python35\\Scripts\\pip.exe install ' + name)
+	else: os.system('pip install ' + name)
 
 @state
 def install_deps_start (values):
@@ -310,15 +315,24 @@ def install_deps_run (values):
 		#check for python
 		elif values['mode'] == 'python':
 			
+			#install linux
+			if 'linux' in sys.platform: os.system('apt-get install python')
+			
 			#install for windows
-			if 'win' in sys.platform:
-				py = download('https://www.python.org/ftp/python/2.7/python-2.7.msi', 'pyinstall.msi')
-				os.system(dl_loc('pyinstall.msi'))
-				os.remove(dl_loc('pyinstall.msi'))
-			
-			#linux
-			elif 'linux' in sys.platform: os.system('apt-get install python')
-			
+			else:
+				if 'darwin' in sys.platform:
+					url = '3.5.0/python-3.5.0-macosx10.6.pkg'
+					name = 'pyinstall.pkg'
+				elif 'win' in sys.platform:
+					if '64' in platform.architecture()[0]: url = '3.5.0/python-3.5.0-amd64.exe'
+					else: url = '3.5.0/python-3.5.0.exe'
+					name = 'pyinstall.exe'
+					os.environ['path'] = os.environ['path'] + ';C:\\Python35'
+				else: raise error('Platform not supported')
+				py = download('https://www.python.org/ftp/python/' + url, name)
+				os.system(dl_loc(name))
+				os.remove(dl_loc(name))
+
 			#progress
 			values['bar'].setValue(1)
 			glos['python_check'] = True
