@@ -13,7 +13,9 @@ height = 240
 deps = {	'python':'Python',
 			'numpy':'Numpy',
 			'scipy':'Scipy',
-			'scikit':'SciKit Learn' }
+			'scikit':'SciKit Learn',
+			'pathlib': 'Pathlib'
+		}
 
 #system
 app = None
@@ -206,6 +208,7 @@ def check_deps_splash_start (values):
 	section('* Numpy', 10)
 	section('* SciPy', 10)
 	section('* SciKit Learn', 10)
+	section('* Pathlib', 10)
 	section('Press "Next" to start the scan.', 10)
 	values['next'] = next_button()
 	return True
@@ -241,7 +244,7 @@ def check_deps_run (values):
 	elif values['mode'] == 'python':
 		
 		#has python
-		if glos['python'] and os.path.exists('C:/Python27'):
+		if glos['python'] and os.path.exists('C:/Python35'):
 			values['bar'].setValue(1)
 			glos['python_check'] = True
 			values['mode'] = 'numpy'
@@ -270,13 +273,18 @@ def check_deps_run (values):
 	elif values['mode'] == 'scikit':
 		values['bar'].setValue(4)
 		glos['scikit_check'] = True
+		values['mode'] = 'pathlib'
+		return False
+
+	#check for pathlib
+	elif values['mode'] == 'pathlib':
+		values['bar'].setValue(5)
+		glos['pathlib_check'] = True
 		return True
 
 
 #
-def _install_dep (name):
-	if sys.platform.startswith('win'): os.system('C:\\Python35\\Scripts\\pip.exe install ' + name)
-	else: os.system('pip install ' + name)
+def _install_dep (name): os.system('pip install ' + name)
 
 @state
 def install_deps_start (values):
@@ -363,6 +371,14 @@ def install_deps_run (values):
 			_install_dep('scikit-learn')
 			values['bar'].setValue(4)
 			glos['scikit_check'] = True
+			values['mode'] = 'pathlib'
+			return False
+
+		#check for pathlib
+		elif values['mode'] == 'pathlib':
+			_install_dep('pathlib')
+			values['bar'].setValue(5)
+			glos['pathlib_check'] = True
 			return True
 #
 @state
@@ -372,7 +388,7 @@ def install_freedisc_start (values):
 
 @state
 def install_freedisc_run (values):
-	_install_dep('freediscovery')
+	_install_dep('freediscovery[engine]')
 	return True
 
 
